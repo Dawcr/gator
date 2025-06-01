@@ -46,6 +46,35 @@ func handlerRegister(s *state, cmd command) error {
 		return err
 	}
 
-	fmt.Printf("user %s has been created, %v\n", usr.Name, usr)
+	fmt.Printf("user %s has been created\n", usr.Name)
+	printUser(usr)
+	return nil
+}
+
+func printUser(user database.User) {
+	fmt.Printf(" * ID:      %v\n", user.ID)
+	fmt.Printf(" * Name:    %v\n", user.Name)
+}
+
+func handlerReset(s *state, cmd command) error {
+	if err := s.db.ResetDB(context.Background()); err != nil {
+		return fmt.Errorf("error resetting db: %v", err)
+	}
+	fmt.Printf("Db reset\n")
+	return nil
+}
+
+func handlerUsers(s *state, cmd command) error {
+	users, err := s.db.GetUsers(context.Background())
+	if err != nil {
+		return fmt.Errorf("error retrieving users list from db: %v", err)
+	}
+	for _, user := range users {
+		fmt.Printf("* %v", user.Name)
+		if user.Name == s.cfg.CurrentUserName {
+			fmt.Print(" (current)")
+		}
+		fmt.Printf("\n")
+	}
 	return nil
 }

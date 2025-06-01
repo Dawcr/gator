@@ -27,7 +27,7 @@ func main() {
 
 	db, err := sql.Open("postgres", appState.cfg.DbURL)
 	if err != nil {
-		log.Fatalf("error opening sql connection: %v", err)
+		log.Fatalf("error connecting to db: %v", err)
 	}
 	appState.db = database.New(db)
 
@@ -37,6 +37,8 @@ func main() {
 
 	cmds.register("login", handlerLogin)
 	cmds.register("register", handlerRegister)
+	cmds.register("reset", handlerReset)
+	cmds.register("users", handlerUsers)
 
 	if len(os.Args) < 2 {
 		log.Fatal("usage: cli <command> [args...]")
