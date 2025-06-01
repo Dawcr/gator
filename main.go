@@ -1,13 +1,17 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"os"
 
 	"github.com/dawcr/gator/internal/config"
+	"github.com/dawcr/gator/internal/database"
+	_ "github.com/lib/pq"
 )
 
 type state struct {
+	db  *database.Queries
 	cfg *config.Config
 }
 
@@ -21,11 +25,18 @@ func main() {
 		cfg: &cfg,
 	}
 
+	db, err := sql.Open("postgres", appState.cfg.DbURL)
+	if err != nil {
+		log.Fatalf("error opening sql connection: %v", err)
+	}
+	appState.db = database.New(db)
+
 	cmds := commands{
 		registeredCommands: make(map[string]func(*state, command) error),
 	}
 
 	cmds.register("login", handlerLogin)
+	cmds.register("register", handlerRegister)
 
 	if len(os.Args) < 2 {
 		log.Fatal("usage: cli <command> [args...]")
