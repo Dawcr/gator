@@ -35,7 +35,8 @@ func handlerFollow(s *state, cmd command) error {
 		return fmt.Errorf("error while creating feed follow: %v", err)
 	}
 
-	fmt.Printf("%v successfully followed %v", feed_follow.UserName, feed_follow.FeedName)
+	fmt.Println("Feed follow created:")
+	printFeedFollow(feed_follow.UserName, feed_follow.FeedName)
 	return nil
 }
 
@@ -43,6 +44,11 @@ func handlerFollowing(s *state, cmd command) error {
 	feeds, err := s.db.GetFeedFollowsForUser(context.Background(), s.cfg.CurrentUserName)
 	if err != nil {
 		return fmt.Errorf("error retrieving feed follows for current user: %v", err)
+	}
+
+	if len(feeds) == 0 {
+		fmt.Println("Current user does not follow any feed.")
+		return nil
 	}
 
 	printFeedFollows(feeds)
@@ -62,4 +68,9 @@ func followCreated(s *state, url string) error {
 		Name: "follow",
 		Args: []string{url},
 	})
+}
+
+func printFeedFollow(username, feedname string) {
+	fmt.Printf("* User:          %s\n", username)
+	fmt.Printf("* Feed:          %s\n", feedname)
 }
