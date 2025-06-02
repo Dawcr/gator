@@ -38,6 +38,11 @@ func handlerAddFeed(s *state, cmd command) error {
 	println()
 	println("======================================")
 
+	err = followCreated(s, url)
+	if err != nil {
+		return fmt.Errorf("error following feed: %v", err)
+	}
+
 	return nil
 }
 
