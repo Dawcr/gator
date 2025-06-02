@@ -21,6 +21,11 @@ func handlerAgg(s *state, cmd command) error {
 	if err != nil {
 		return fmt.Errorf("error parsing time_between_reqs: %v", err)
 	}
+	// Prevent excessive requests
+	if timeBetweenRequests < time.Minute {
+		timeBetweenRequests = time.Minute
+	}
+
 	fmt.Printf("Collecting feeds every %v\n", timeBetweenRequests)
 
 	ticker := time.NewTicker(timeBetweenRequests)
