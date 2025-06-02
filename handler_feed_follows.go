@@ -9,14 +9,9 @@ import (
 	"github.com/google/uuid"
 )
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) < 1 {
 		return fmt.Errorf("missing follow target")
-	}
-
-	usr, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("couldn't retrieve info for current user: %v", err)
 	}
 
 	feed, err := s.db.GetFeedFromURL(context.Background(), cmd.Args[0])
@@ -28,7 +23,7 @@ func handlerFollow(s *state, cmd command) error {
 		ID:        uuid.New(),
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
-		UserID:    usr.ID,
+		UserID:    user.ID,
 		FeedID:    feed.ID,
 	})
 	if err != nil {
@@ -40,8 +35,8 @@ func handlerFollow(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollowing(s *state, cmd command) error {
-	feeds, err := s.db.GetFeedFollowsForUser(context.Background(), s.cfg.CurrentUserName)
+func handlerFollowing(s *state, cmd command, usr database.User) error {
+	feeds, err := s.db.GetFeedFollowsForUser(context.Background(), usr.ID)
 	if err != nil {
 		return fmt.Errorf("error retrieving feed follows for current user: %v", err)
 	}
@@ -63,11 +58,12 @@ func printFeedFollows(feeds []database.GetFeedFollowsForUserRow) {
 	}
 }
 
-func followCreated(s *state, url string) error {
+func followCreated(s *state, url string, user database.User) error {
 	return handlerFollow(s, command{
 		Name: "follow",
 		Args: []string{url},
-	})
+	},
+		user)
 }
 
 func printFeedFollow(username, feedname string) {
