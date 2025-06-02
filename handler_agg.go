@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/dawcr/gator/internal/database"
@@ -58,7 +59,7 @@ func scrapeFeed(db *database.Queries, feedInfo database.Feed) {
 		if err != nil {
 			log.Printf("error parsing time: %v", err)
 		}
-		_, _ = db.CreatePost(context.Background(), database.CreatePostParams{
+		_, err = db.CreatePost(context.Background(), database.CreatePostParams{
 			ID:        uuid.New(),
 			CreatedAt: time.Now().UTC(),
 			UpdatedAt: time.Now().UTC(),
@@ -68,9 +69,19 @@ func scrapeFeed(db *database.Queries, feedInfo database.Feed) {
 				String: feedItem.Description,
 				Valid:  true,
 			},
-			PublishedAt: parsedTime,
-			FeedID:      feedInfo.ID,
+			PublishedAt: sql.NullTime{
+				Time:  parsedTime,
+				Valid: true,
+			},
+			FeedID: feedInfo.ID,
 		})
+		if err != nil {
+			if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+				continue
+			}
+			log.Printf("Couldn't create post: %v", err)
+			continue
+		}
 	}
 	log.Printf("Feed %s collected, %v posts found", feedInfo.Name, len(feedData.Channel.Item))
 }

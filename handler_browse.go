@@ -26,14 +26,17 @@ func handlerBrowse(s *state, cmd command, user database.User) error {
 		return fmt.Errorf("error fetching posts: %v", err)
 	}
 
+	fmt.Printf("Found %d posts for %v", len(posts), user.Name)
 	printPosts(posts)
 	return nil
 }
 
-func printPosts(posts []database.Post) {
+func printPosts(posts []database.GetPostsForUserRow) {
 	for _, post := range posts {
-		fmt.Println(post.Title)
-		fmt.Println(post.Description.String)
-		fmt.Println()
+		fmt.Printf("%s from %s\n", post.PublishedAt.Time.Format("Mon Jan 2"), post.FeedName)
+		fmt.Printf("--- %s ---\n", post.Title)
+		fmt.Printf("    %v\n", post.Description.String)
+		fmt.Printf("Link: %s\n", post.Url)
+		fmt.Println("=====================================")
 	}
 }
