@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/dawcr/gator/internal/database"
+	"github.com/google/uuid"
 )
 
 func handlerAgg(s *state, cmd command) error {
@@ -52,6 +54,23 @@ func scrapeFeed(db *database.Queries, feedInfo database.Feed) {
 
 	for _, feedItem := range feedData.Channel.Item {
 		fmt.Printf("Found post: %v\n", feedItem.Title)
+		parsedTime, err := time.Parse(time.RFC1123Z, feedItem.PubDate)
+		if err != nil {
+			log.Printf("error parsing time: %v", err)
+		}
+		_, _ = db.CreatePost(context.Background(), database.CreatePostParams{
+			ID:        uuid.New(),
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
+			Title:     feedItem.Title,
+			Url:       feedItem.Link,
+			Description: sql.NullString{
+				String: feedItem.Description,
+				Valid:  true,
+			},
+			PublishedAt: parsedTime,
+			FeedID:      feedInfo.ID,
+		})
 	}
 	log.Printf("Feed %s collected, %v posts found", feedInfo.Name, len(feedData.Channel.Item))
 }
