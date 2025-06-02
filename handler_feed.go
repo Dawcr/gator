@@ -10,8 +10,8 @@ import (
 )
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
-	if len(cmd.Args) < 2 {
-		return fmt.Errorf("missing arguments")
+	if len(cmd.Args) != 2 {
+		return fmt.Errorf("usage: %s <name> <url>", cmd.Name)
 	}
 
 	name, url := cmd.Args[0], cmd.Args[1]

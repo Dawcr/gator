@@ -11,7 +11,7 @@ import (
 
 func handlerLogin(s *state, cmd command) error {
 	if len(cmd.Args) != 1 {
-		return fmt.Errorf("usage: cli %s <name>", cmd.Name)
+		return fmt.Errorf("usage: %s <name>", cmd.Name)
 	}
 
 	usr, err := s.db.GetUser(context.Background(), cmd.Args[0])
@@ -29,7 +29,7 @@ func handlerLogin(s *state, cmd command) error {
 
 func handlerRegister(s *state, cmd command) error {
 	if len(cmd.Args) != 1 {
-		return fmt.Errorf("usage: cli %s <name>", cmd.Name)
+		return fmt.Errorf("usage: %s <name>", cmd.Name)
 	}
 	usr, err := s.db.CreateUser(context.Background(), database.CreateUserParams{
 		ID:        uuid.New(),
