@@ -3,32 +3,55 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
+	"github.com/dawcr/gator/internal/database"
 )
 
-const wagslaneFeedURL = "https://www.wagslane.dev/index.xml"
-
 func handlerAgg(s *state, cmd command) error {
-	feed, err := fetchFeed(context.Background(), wagslaneFeedURL)
-	if err != nil {
-		return fmt.Errorf("error fetching feed: %v", err)
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("usage: %s <time_between_reqs>", cmd.Name)
 	}
 
-	fmt.Printf("Feed: %+v\n", feed)
-	return nil
+	timeBetweenRequests, err := time.ParseDuration(cmd.Args[0])
+	if err != nil {
+		return fmt.Errorf("error parsing time_between_reqs: %v", err)
+	}
+	fmt.Printf("Collecting feeds every %v\n", timeBetweenRequests)
+
+	ticker := time.NewTicker(timeBetweenRequests)
+	for ; ; <-ticker.C {
+		scrapeFeeds(s)
+	}
 }
 
-// func printRSSFeed(feed *RSSFeed) {
-// 	escapeAndPrint(feed.Channel.Title)
-// 	escapeAndPrint(feed.Channel.Link)
-// 	escapeAndPrint(feed.Channel.Description)
-// 	for _, item := range feed.Channel.Item {
-// 		escapeAndPrint(item.Title)
-// 		escapeAndPrint(item.Link)
-// 		escapeAndPrint(item.Description)
-// 		escapeAndPrint(item.PubDate)
-// 	}
-// }
+func scrapeFeeds(s *state) {
+	feedInfo, err := s.db.GetNextFeedToFetch(context.Background())
+	if err != nil {
+		log.Printf("error getting next feed to fetch: %v", err)
+		return
+	}
+	log.Println("found a feed to fetch")
 
-// func escapeAndPrint(str string) {
-// 	fmt.Println(html.UnescapeString(str))
-// }
+	scrapeFeed(s.db, feedInfo)
+}
+
+func scrapeFeed(db *database.Queries, feedInfo database.Feed) {
+	_, err := db.MarkFeedFetched(context.Background(), feedInfo.ID)
+	if err != nil {
+		log.Printf("error marking feed as fetched: %v", err)
+		return
+	}
+
+	feedData, err := fetchFeed(context.Background(), feedInfo.Url)
+	if err != nil {
+		log.Printf("error fetching feed: %v", err)
+		return
+	}
+
+	for _, feedItem := range feedData.Channel.Item {
+		fmt.Printf("Found post: %v\n", feedItem.Title)
+	}
+	log.Printf("Feed %s collected, %v posts found", feedInfo.Name, len(feedData.Channel.Item))
+}
